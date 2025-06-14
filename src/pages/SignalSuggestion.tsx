@@ -1,9 +1,12 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, AlertTriangle, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import RealtimeSignals from '@/components/RealtimeSignals';
+import MarketScanner from '@/components/MarketScanner';
+import AISentiment from '@/components/AISentiment';
 
 interface Signal {
   id: string;
@@ -19,6 +22,7 @@ interface Signal {
 }
 
 const SignalSuggestion = () => {
+  const navigate = useNavigate();
   const [signals, setSignals] = useState<Signal[]>([]);
   const [loading, setLoading] = useState(false);
   const [apiKey, setApiKey] = useState('');
@@ -38,7 +42,7 @@ const SignalSuggestion = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-4.1-2025-04-14',
           messages: [
             {
               role: 'system',
@@ -90,9 +94,28 @@ const SignalSuggestion = () => {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Scalping Signal Generator</h1>
-          <p className="text-muted-foreground">AI-powered signals for quick profits with minimal risk</p>
+          <div className="flex items-center gap-4 mb-4">
+            <Button 
+              onClick={() => navigate('/')}
+              variant="outline"
+              size="sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold mb-2">Advanced Trading Signals</h1>
+          <p className="text-muted-foreground">AI-powered signals, real-time monitoring, and market sentiment analysis</p>
         </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <RealtimeSignals />
+          <AISentiment />
+        </div>
+
+        <div className="mb-8">
+          <MarketScanner />
+        </div>
 
         <div className="glass-card p-6 rounded-lg mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -116,7 +139,7 @@ const SignalSuggestion = () => {
               ) : (
                 <TrendingUp className="w-4 h-4" />
               )}
-              Generate Signals
+              Generate AI Signals
             </Button>
           </div>
         </div>
@@ -125,7 +148,7 @@ const SignalSuggestion = () => {
           {signals.length === 0 && !loading && (
             <div className="text-center py-12 text-muted-foreground">
               <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No signals generated yet. Click "Generate Signals" to get AI-powered scalping opportunities.</p>
+              <p>No AI signals generated yet. Click "Generate AI Signals" to get professional scalping opportunities.</p>
             </div>
           )}
 
