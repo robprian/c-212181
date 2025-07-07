@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, AlertTriangle, RefreshCw, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertTriangle, RefreshCw, Zap, Target, Eye } from 'lucide-react';
+import { marketDataProvider, signalGenerator } from '@/utils/marketData';
 
 interface RealtimeSignal {
   id: string;
@@ -13,16 +14,43 @@ interface RealtimeSignal {
   strength: number;
   timestamp: Date;
   change: number;
+  reasoning: string;
+  confidence: number;
 }
 
 const RealtimeSignals = () => {
   const [signals, setSignals] = useState<RealtimeSignal[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isGeneratingSignals, setIsGeneratingSignals] = useState(false);
+
+  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'SOLUSDT', 'DOTUSDT', 'MATICUSDT'];
+
+  const generateRealSignal = async (symbol: string): Promise<RealtimeSignal | null> => {
+    try {
+      const marketData = await marketDataProvider.fetchMarketData(symbol);
+      const aiSignal = await signalGenerator.generateSignal(symbol, 'demo-key');
+      
+      return {
+        id: `signal-${Date.now()}-${Math.random()}`,
+        symbol: symbol.replace('USDT', ''),
+        signal: aiSignal.action.toUpperCase() as 'BUY' | 'SELL' | 'HOLD',
+        price: marketData.price,
+        strength: Math.floor(Math.random() * 100) + 1,
+        timestamp: new Date(),
+        change: marketData.changePercent,
+        reasoning: aiSignal.reasoning,
+        confidence: aiSignal.confidence
+      };
+    } catch (error) {
+      console.error('Error generating real signal:', error);
+      return null;
+    }
+  };
 
   const generateRandomSignal = (): RealtimeSignal => {
-    const symbols = ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'MATIC'];
+    const symbolsDisplay = ['BTC', 'ETH', 'BNB', 'ADA', 'SOL', 'XRP', 'DOT', 'MATIC'];
     const signalTypes = ['BUY', 'SELL', 'HOLD'] as const;
-    const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+    const symbol = symbolsDisplay[Math.floor(Math.random() * symbolsDisplay.length)];
     
     return {
       id: `signal-${Date.now()}-${Math.random()}`,
@@ -32,19 +60,42 @@ const RealtimeSignals = () => {
       strength: Math.floor(Math.random() * 100) + 1,
       timestamp: new Date(),
       change: (Math.random() - 0.5) * 10,
+      reasoning: 'Technical analysis indicates potential movement',
+      confidence: Math.floor(Math.random() * 40) + 60
     };
   };
 
-  const startRealtime = () => {
+  const startRealtime = async () => {
     setIsConnected(true);
-    const interval = setInterval(() => {
-      const newSignal = generateRandomSignal();
-      setSignals(prev => [newSignal, ...prev.slice(0, 9)]);
-    }, 3000);
+    setIsGeneratingSignals(true);
+    
+    // Generate initial real signals
+    for (const symbol of symbols.slice(0, 3)) {
+      const signal = await generateRealSignal(symbol);
+      if (signal) {
+        setSignals(prev => [signal, ...prev.slice(0, 9)]);
+      }
+    }
+    
+    const interval = setInterval(async () => {
+      if (Math.random() > 0.5) {
+        // Generate real signal 50% of the time
+        const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+        const signal = await generateRealSignal(randomSymbol);
+        if (signal) {
+          setSignals(prev => [signal, ...prev.slice(0, 9)]);
+        }
+      } else {
+        // Generate simulated signal
+        const newSignal = generateRandomSignal();
+        setSignals(prev => [newSignal, ...prev.slice(0, 9)]);
+      }
+    }, 5000);
 
     return () => {
       clearInterval(interval);
       setIsConnected(false);
+      setIsGeneratingSignals(false);
     };
   };
 
